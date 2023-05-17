@@ -1929,3 +1929,286 @@ plam.cl.vs <- function(y, Z, X, np.point=NULL, vs=TRUE, grid.nknots=NULL, grid.l
     return(sal)
   }
 }
+
+#-- Linear part variable selection --#
+
+
+#' Variable selection in PLAM with fixed lambdas for beta
+#' @export
+plam.cl.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=100, bound.control=10^(-3)){
+  # y continuos response variable (n)
+  # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
+  # In case it is a cathegorical variable, class of Z should be 'factor'.
+  
+  n <- length(y)
+  
+  if(is.factor(Z)){
+    q <- nlevels(as.factor(Z))-1
+    lev.Z <- levels(Z)
+    Z.aux <- matrix(0,n,nlevels(Z)-1)
+    for(k in 1:(nlevels(Z)-1)){
+      Z.aux[,k] <- as.numeric(Z == lev.Z[k+1]) #Dummies
+    }
+  }else{
+    Z.aux <- Z
+    q <- dim(Z)[2]
+  }
+  
+  sal  <- lm(y ~ Z.aux)
+  
+  xdesign <- model.matrix(sal)
+  
+  
+  #Construyo el beta 0
+  beta.ini.complete <- as.vector(sal$coefficients)
+  beta0 <- sal$coefficients[1]
+  beta.ini <- as.vector(sal$coefficients)[-1]
+  nbetas <- length(beta.ini)
+  
+  corte <- 1
+  iter <- 0
+  
+  while( (corte>bound.control) & (iter<MAXITER)){
+    iter <- iter +1
+    #print(iter)
+    regresion.hat <- xdesign%*%c(beta0, beta.ini)
+    res <- y-regresion.hat
+    
+    #Lo siguiente computa la matriz Sigma Lambda1, Lambda2
+    Sigmalambda <- matrix(0,nbetas,nbetas)
+    for(i in 1:q){
+      Sigmalambda[i,i] <- as.numeric(scad.d(beta.ini[i],lambda=lambdas[i]))/abs(beta.ini[i])*(1/2)
+    }
+    
+    Si <- xdesign[,-1]
+    
+    try.sal <- try(
+      AUX <- (solve(t(Si)%*%Si*(1/n)+Sigmalambda))
+    )
+    
+    if(class(try.sal)[1]!= 'try-error'){
+      beta1 <- as.vector( AUX%*%t(Si)%*%(y-beta0)*(1/n) )
+      corte <- my.norm.2(beta.ini-beta1)/my.norm.2(beta.ini)
+      beta.ini <- beta1
+      error <- 0
+    }else{
+      beta1 <- beta.ini
+      iter <- MAXITER
+      error <- 1
+    }
+  }
+  
+  coef.lin <- beta1[1:q]
+  alpha.hat <- beta0
+  
+  is.zero <- c(abs(coef.lin)<bound.control)
+  
+  salida <- list(prediction=regresion.hat, betas=beta1, coef.lin=coef.lin, is.zero=is.zero, error=error)
+  #list(prediction=regresion.hat, sigma.hat=sigma.hat, betas=beta1, coef.const=alpha.hat, coef.lin=coef.lin, y=y, Z=Z.aux, xdesign=xdesign, is.zero=is.zero, error=error)
+  return(salida)
+  
+}
+
+
+
+
+#' Variable selection in robust PLAM with fixed lambdas for beta
+#' @export
+plam.rob.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=100, bound.control=10^(-3)){
+  # y continuos response variable (n)
+  # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
+  # In case it is a cathegorical variable, class of Z should be 'factor'.
+  
+  n <- length(y)
+  
+  if(is.factor(Z)){
+    q <- nlevels(as.factor(Z))-1
+    lev.Z <- levels(Z)
+    Z.aux <- matrix(0,n,nlevels(Z)-1)
+    for(k in 1:(nlevels(Z)-1)){
+      Z.aux[,k] <- as.numeric(Z == lev.Z[k+1]) #Dummies
+    }
+  }else{
+    Z.aux <- Z
+    q <- dim(Z)[2]
+  }
+  
+  
+  control <- robustbase::lmrob.control(trace.level = 0,         # 0
+                                       nResample   =  500,      # 500 default
+                                       tuning.psi = 4.685061,      # para 85% eff usar 3.443689 # para 95% eff usar 4.685061
+                                       subsampling = 'simple',  #
+                                       rel.tol     = 1e-5,      # 1e-7
+                                       refine.tol  = 1e-5,      # 1e-7
+                                       k.max       = 2e3,       # 200
+                                       maxit.scale = maxit,       # 200 #2e3
+                                       max.it      = maxit)       # 50 #2e3
+  sal  <- robustbase::lmrob(y ~ Z.aux, control = control)
+  
+  xdesign <- sal$x
+  sigma.hat <- sal$s
+  
+  
+  #Construyo el beta 0
+  beta.ini.complete <- as.vector(sal$coefficients)
+  beta0 <- sal$coefficients[1]
+  beta.ini <- as.vector(sal$coefficients)[-1]
+  nbetas <- length(beta.ini)
+  
+  corte <- 1
+  iter <- 0
+  
+  while( (corte>bound.control) & (iter<MAXITER)){
+    iter <- iter +1
+    #print(iter)
+    regresion.hat <- xdesign%*%c(beta0, beta.ini)
+    res <- y-regresion.hat
+    
+    #Lo siguiente computa la matriz Sigma Lambda1, Lambda2
+    Sigmalambda <- matrix(0,nbetas,nbetas)
+    for(i in 1:q){
+      Sigmalambda[i,i] <- as.numeric(scad.d(beta.ini[i],lambda=lambdas[i]))/abs(beta.ini[i])*(1/2)
+    }
+    
+    #Ahora voy a computar el estimador reweighted:
+    #Calculamos el vector de pesos wi:
+    wi <- as.matrix(psi.w(res/sigma.hat))
+    Si <- xdesign[,-1]
+    AUX1 <- 0
+    for(i in 1:n){
+      AUX1 <- wi[i]*t(t(Si[i,]))%*%t(Si[i,])/(sigma.hat^2*n) + AUX1
+    }
+    try.sal <- try(
+      AUX <- solve(AUX1+2*Sigmalambda)
+    )
+    
+    if(class(try.sal)[1]!= 'try-error'){
+      AUX2 <- 0
+      for(i in 1:n){
+        AUX2 <- wi[i]/(sigma.hat^2)*Si[i,]*(y[i]-beta0)/n + AUX2
+      }
+      AUX2 <- as.matrix(AUX2)
+      beta1 <- as.vector( AUX%*%AUX2 ) #y
+      corte <- my.norm.2(beta.ini-beta1)/my.norm.2(beta.ini)
+      beta.ini <- beta1
+      error <- 0
+    }else{
+      beta1 <- beta.ini
+      iter <- MAXITER
+      error <- 1
+    }
+  }
+  
+  #beta.hat <- beta1[-1]
+  coef.lin <- beta1[1:q] #beta1[2:(q+1)]
+  alpha.hat <- beta0
+  
+  is.zero <- c(abs(coef.lin)<bound.control)
+  
+  salida <- list(prediction=regresion.hat, sigma.hat=sigma.hat, betas=beta1, coef.lin=coef.lin, is.zero=is.zero, error=error)
+  #list(prediction=regresion.hat, sigma.hat=sigma.hat, betas=beta1, coef.const=alpha.hat, coef.lin=coef.lin, y=y, Z=Z.aux, xdesign=xdesign, is.zero=is.zero, error=error)
+  return(salida)
+  
+}
+
+
+#' Selection lambdas with BIC criteria for betas
+#' @export
+plam.cl.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
+  # y continuos response variable (n)
+  # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
+  # In case it is a cathegorical variable, class of Z should be 'factor'.
+  q <- dim(Z)[2]
+  p <- dim(X)[2]
+  n <- length(y)
+  #Calculo el estimador sin penalizar
+  unpen <- plam.cl(y=y, Z=Z, X=X, degree.spline=degree.spline)
+  nknots <- unpen$nknots
+  mu.hat <- unpen$alpha
+  g.matrix <- unpen$g.matrix
+  nbasis <- unpen$nbasis
+  
+  dim.grilla <- dim(grid.lambda)[1]
+  BIC <- rep(0,dim.grilla)
+  error <- 0
+  y.new <- y-mu.hat-rowSums(g.matrix)
+  for(i in 1:dim.grilla){
+    #cat("grilla de lambdas = ", grilla[i,1], "\n")
+    #print(i)
+    lambdas <- grid.lambda[i,]
+    AUX2 <- plam.cl.vs.betas.lambdas.fixed(y=y.new, Z=Z, lambdas=lambdas, maxit=maxit, MAXITER=MAXITER)
+    error <- error+AUX2$error
+    betas <- AUX2$betas
+    dfc <- sum( abs(betas[1:q])> bound.control)
+    regresion.hat <- AUX2$prediction
+    tuk <- (y - regresion.hat)^2
+    BIC[i] <- log( sum(tuk) ) + dfc*(log(n)/n)
+  }
+  
+  position <- which.min(BIC)
+  lambda.hat <- as.vector(grid.lambda[position,])
+  
+  AUXfinal <- plam.cl.vs.betas.lambdas.fixed(y=y.new, Z=Z, lambdas=lambda.hat, maxit=maxit, MAXITER=MAXITER)
+  coef.lin <- AUXfinal$coef.lin
+  prediction <- AUXfinal$prediction
+  is.zero <- AUXfinal$is.zero
+  betas <- AUXfinal$betas
+  error <- AUXfinal$error
+  
+  salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
+                 coef.lin = coef.lin, prediction=prediction, is.zero=is.zero, nbasis=nbasis, errortotal=error)
+  return(salida)
+}
+
+
+
+#' Selection lambdas with robust BIC criteria for betas
+#' @export
+plam.rob.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
+  # y continuos response variable (n)
+  # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
+  # In case it is a cathegorical variable, class of Z should be 'factor'.
+  q <- dim(Z)[2]
+  p <- dim(X)[2]
+  n <- length(y)
+  #Calculo el estimador sin penalizar
+  unpen <- plam.rob(y=y, Z=Z, X=X, degree.spline=degree.spline)
+  nknots <- unpen$nknots
+  mu.hat <- unpen$alpha
+  g.matrix <- unpen$g.matrix
+  sigma.hat <- unpen$sigma
+  nbasis <- unpen$nbasis
+  
+  dim.grilla <- dim(grid.lambda)[1]
+  BIC <- rep(0,dim.grilla)
+  error <- 0
+  y.new <- y-mu.hat-rowSums(g.matrix)
+  for(i in 1:dim.grilla){
+    #cat("grilla de lambdas = ", grilla[i,1], "\n")
+    #print(i)
+    lambdas <- grid.lambda[i,]
+    AUX2 <- plam.rob.vs.betas.lambdas.fixed(y=y.new, Z=Z, lambdas=lambdas, maxit=maxit, MAXITER=MAXITER)
+    error <- error+AUX2$error
+    betas <- AUX2$betas
+    dfc <- sum( abs(betas[1:q])> bound.control)
+    regresion.hat <- AUX2$prediction
+    tuk <- tukey.loss( (y - regresion.hat)/sigma.hat )*sigma.hat^2 #Este funciona peor
+    BIC[i] <- log( sum(tuk) ) + dfc*(log(n)/n)
+  }
+  
+  position <- which.min(BIC)
+  lambda.hat <- as.vector(grid.lambda[position,])
+  
+  AUXfinal <- plam.rob.vs.betas.lambdas.fixed(y=y.new, Z=Z, lambdas=lambda.hat, maxit=maxit, MAXITER=MAXITER)
+  coef.lin <- AUXfinal$coef.lin
+  prediction <- AUXfinal$prediction
+  sigma.hat <- AUXfinal$sigma.hat
+  is.zero <- AUXfinal$is.zero
+  betas <- AUXfinal$betas
+  error <- AUXfinal$error
+  
+  salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
+                 coef.lin = coef.lin, prediction=prediction, is.zero=is.zero, sigma.hat=sigma.hat, nbasis=nbasis, errortotal=error)
+  return(salida)
+}
+
