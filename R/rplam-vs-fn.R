@@ -1942,17 +1942,8 @@ plam.cl.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=100
   
   n <- length(y)
   
-  if(is.factor(Z)){
-    q <- nlevels(as.factor(Z))-1
-    lev.Z <- levels(Z)
-    Z.aux <- matrix(0,n,nlevels(Z)-1)
-    for(k in 1:(nlevels(Z)-1)){
-      Z.aux[,k] <- as.numeric(Z == lev.Z[k+1]) #Dummies
-    }
-  }else{
-    Z.aux <- Z
-    q <- dim(Z)[2]
-  }
+  Z.aux <- Z
+  q <- dim(Z)[2]
   
   sal  <- lm(y ~ Z.aux)
   
@@ -2004,7 +1995,6 @@ plam.cl.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=100
   is.zero <- c(abs(coef.lin)<bound.control)
   
   salida <- list(prediction=regresion.hat, betas=beta1, coef.lin=coef.lin, is.zero=is.zero, error=error)
-  #list(prediction=regresion.hat, sigma.hat=sigma.hat, betas=beta1, coef.const=alpha.hat, coef.lin=coef.lin, y=y, Z=Z.aux, xdesign=xdesign, is.zero=is.zero, error=error)
   return(salida)
   
 }
@@ -2020,18 +2010,8 @@ plam.rob.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=10
   # In case it is a cathegorical variable, class of Z should be 'factor'.
   
   n <- length(y)
-  
-  if(is.factor(Z)){
-    q <- nlevels(as.factor(Z))-1
-    lev.Z <- levels(Z)
-    Z.aux <- matrix(0,n,nlevels(Z)-1)
-    for(k in 1:(nlevels(Z)-1)){
-      Z.aux[,k] <- as.numeric(Z == lev.Z[k+1]) #Dummies
-    }
-  }else{
-    Z.aux <- Z
-    q <- dim(Z)[2]
-  }
+  Z.aux <- Z
+  q <- dim(Z)[2]
   
   
   control <- robustbase::lmrob.control(trace.level = 0,         # 0
@@ -2114,7 +2094,7 @@ plam.rob.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=10
 
 #' Selection lambdas with BIC criteria for betas
 #' @export
-plam.cl.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
+plam.cl.vs.betas.lambdas <- function(y, Z, X, np.point=NULL, degree.spline=degree.spline, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
   # y continuos response variable (n)
   # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
   # In case it is a cathegorical variable, class of Z should be 'factor'.
@@ -2122,11 +2102,12 @@ plam.cl.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.
   p <- dim(X)[2]
   n <- length(y)
   #Calculo el estimador sin penalizar
-  unpen <- plam.cl(y=y, Z=Z, X=X, degree.spline=degree.spline)
+  unpen <- plam.cl(y=y, Z=Z, X=X, np.point=np.point, degree.spline=degree.spline)
   nknots <- unpen$nknots
   mu.hat <- unpen$alpha
   g.matrix <- unpen$g.matrix
   nbasis <- unpen$nbasis
+  np.prediction <- unpen$np.prediction
   
   dim.grilla <- dim(grid.lambda)[1]
   BIC <- rep(0,dim.grilla)
@@ -2155,8 +2136,14 @@ plam.cl.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.
   betas <- AUXfinal$betas
   error <- AUXfinal$error
   
-  salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
-                 coef.lin = coef.lin, prediction=prediction, is.zero=is.zero, nbasis=nbasis, errortotal=error)
+  if(is.null(np.point)){
+    salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
+                 coef.lin = coef.lin, g.matrix=g.matrix, prediction=prediction, is.zero=is.zero, nbasis=nbasis, errortotal=error)
+  }else{
+    salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
+                   coef.lin = coef.lin, g.matrix=g.matrix, prediction=prediction, np.prediction=np.prediction, is.zero=is.zero, nbasis=nbasis, errortotal=error)
+  }
+  
   return(salida)
 }
 
@@ -2164,7 +2151,7 @@ plam.cl.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.
 
 #' Selection lambdas with robust BIC criteria for betas
 #' @export
-plam.rob.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
+plam.rob.vs.betas.lambdas <- function(y, Z, X, np.point=NULL, degree.spline=3, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
   # y continuos response variable (n)
   # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
   # In case it is a cathegorical variable, class of Z should be 'factor'.
@@ -2172,12 +2159,14 @@ plam.rob.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid
   p <- dim(X)[2]
   n <- length(y)
   #Calculo el estimador sin penalizar
-  unpen <- plam.rob(y=y, Z=Z, X=X, degree.spline=degree.spline)
+  unpen <- plam.rob(y=y, Z=Z, X=X, np.point=np.point, degree.spline=degree.spline)
+
   nknots <- unpen$nknots
-  mu.hat <- unpen$alpha
+  mu.hat <- unpen$coef.const
   g.matrix <- unpen$g.matrix
   sigma.hat <- unpen$sigma
   nbasis <- unpen$nbasis
+  np.prediction <- unpen$np.prediction
   
   dim.grilla <- dim(grid.lambda)[1]
   BIC <- rep(0,dim.grilla)
@@ -2192,7 +2181,7 @@ plam.rob.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid
     betas <- AUX2$betas
     dfc <- sum( abs(betas[1:q])> bound.control)
     regresion.hat <- AUX2$prediction
-    tuk <- tukey.loss( (y - regresion.hat)/sigma.hat )*sigma.hat^2 #Este funciona peor
+    tuk <- tukey.loss( (y - regresion.hat)/sigma.hat )*sigma.hat^2
     BIC[i] <- log( sum(tuk) ) + dfc*(log(n)/n)
   }
   
@@ -2207,8 +2196,13 @@ plam.rob.vs.betas.lambdas <- function(y, Z, X, degree.spline=degree.spline, grid
   betas <- AUXfinal$betas
   error <- AUXfinal$error
   
-  salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
-                 coef.lin = coef.lin, prediction=prediction, is.zero=is.zero, sigma.hat=sigma.hat, nbasis=nbasis, errortotal=error)
+  if(is.null(np.point)){
+    salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
+                 coef.lin = coef.lin, g.matrix=g.matrix, prediction=prediction, is.zero=is.zero, sigma.hat=sigma.hat, nbasis=nbasis, errortotal=error)
+  }else{
+    salida <- list(lambdas=lambda.hat, coef.const=mu.hat, nknots=nknots, y=y, Z=Z, X=X, betas=betas,
+                   coef.lin = coef.lin, g.matrix=g.matrix, prediction=prediction, np.prediction=np.prediction, is.zero=is.zero, sigma.hat=sigma.hat, nbasis=nbasis, errortotal=error)
+  }
   return(salida)
 }
 
