@@ -67,19 +67,25 @@ boxplot(datos$V11) #Hay outliers pero todos bastante cercanos entre sí
 
 degree.spline <- 3
 
-source("R/rplam-fn.R")
+source("R/rplam-vs-fn.R")
 library(fda)
 
-grid.la1 <- c(0, 0.001, 0.01, 0.05, 0.1, 0.2)  #c(0,0.001,0.01,0.05, 0.1, 0.2,1,5,20) #Para los estandarizados
-grid.la2 <- c(0.01, 0.05, 0.1, 0.2, 0.5, 1, 2)  #c(0, 0.1, 1, 10, 100,1000, 10000) #c(0,0.001,0.01,0.05, 0.1, 0.2,1,5,20,100,1000) #Para los estandarizados
 set.seed(123)
-fit.rob <- plam.rob.vs(y, Z, X, np.point = X, grid.la1=grid.la1, grid.la2=grid.la2, k.malos.max = 10) #3
+
+#Grilla
+grilla.chica <- c(0,0.05,0.1) #c(0, 0.001, 0.01, 0.05, 0.1, 0.2)
+grid.lambda <- expand.grid(grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica)
+dim(grid.lambda)
+
+system.time(
+  fit.rob <- plam.rob.vs.betas.lambdas(y, Z, X, degree.spline=degree.spline, grid.lambda)
+)#Con dos elementos en la grilla tarda 133.179
+
 fit.rob$nknots
 fit.rob$coef.const
 mean(y)
 fit.rob$coef.lin
-fit.rob$la1
-fit.rob$la2
+fit.rob$lambdas
 fit.rob$is.zero
 median( abs(y-fit.rob$prediction))
 
@@ -107,32 +113,23 @@ for(i in 1:3){
   plot(X[ord,i],fit.rob$g.matrix[ord,i],type="l",col='blue',lwd=2)
 }
 
-fit.rob$BIC1
-fit.rob$BIC2
-fit.rob$BIC3
-fit.rob$BIC4
-fit.rob$BIC5
-fit.rob$BIC6
-fit.rob$BIC7
-fit.rob$BIC8
 
 ############################################
 # Acá comienza la iteración con el robusto #
 ############################################
 
-
-grid.la1 <- c(0, 0.001, 0.01, 0.05, 0.1, 0.2) #c(0,0.001,0.01,0.05, 0.1, 0.2,1,5,20) #c(0,0.1,1,10,100,1000) #c(0,0.001,0.01,0.05, 0.1, 0.2) #Con estandarizacion
-grid.la2 <- c(0.01,0.05, 0.1, 0.2, 0.5, 1, 2) #c(0,0.1,1,10,100,1000) #10 #c(0,0.001,0.01,0.05, 0.1, 0.2) #Con estandarizacion
+source("R/rplam-vs-fn.R")
+grilla.chica <- c(0, 0.1)
+grid.lambda <- expand.grid(grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica)
 
 n <- length(y)
-M <- 100 #Debería ser 20
+M <- 10 #Debería ser 100 (o 20)
 contador.max <- 1000
 mar <- rep(NA,M)
 mape <- rep(NA,M)
 sizes <- rep(NA,M)
 nknots.muestras <- rep(NA,M)
-la1.muestras <- rep(NA,M)
-la2.muestras <- rep(NA,M)
+lambdas.muestras <- matrix(NA,M,10)
 cant.out <- rep(NA,M)
 
 set.seed(17)
@@ -161,17 +158,20 @@ while( (runs<M) & (contador<contador.max)) {
       runs <- runs+1
       print(runs)
 
-      fit.full <- plam.rob.vs(y= y[-subsample], Z= Z[-subsample,], X= X[-subsample,],
-                                             np.point = X[subsample,], grid.la1=grid.la1,
-                                             grid.la2=grid.la2, k.malos.max = 2)
+      y.new <- y[-subsample]
+      Z.new <- Z[-subsample,]
+      X.new <- X[-subsample,]
+      np.point.new <- X[subsample,]
+      fit.full <- plam.rob.vs.betas.lambdas(y= y.new, Z= Z.new, X= X.new,
+                                             np.point = np.point.new, grid.lambda=grid.lambda)
       #if (class(fit.full)[1] != "try-error") {
 
 
 
         is.zero[runs,] <- fit.full$is.zero
         nknots.muestras[runs] <- fit.full$nknots
-        la1.muestras[runs] <- fit.full$la1
-        la2.muestras[runs] <- fit.full$la2
+        lambdas.muestras[runs,] <- fit.full$lambdas
+        print(lambdas.muestras[runs,])
 
         submuestras[runs,] <- subsample
         g1[runs,] <- fit.full$g.matrix[,1]
@@ -193,9 +193,6 @@ while( (runs<M) & (contador<contador.max)) {
 }
 }) #Tarda 287.73 segs=4.79 mins
 
-nrob <- nknots.muestras
-la1rob <- la1.muestras
-la2rob <- la2.muestras
 
 #Cuáles son cero:
 is.zero.rob <- colSums(is.zero)
@@ -212,7 +209,7 @@ mar.rob <- mean(mar)
 mape
 mape.rob <- mean(mape)
 
-#Selected frequency for the 13 variables as 0
+#Selected frequency for the 10 variables as 0
 col.is.zero.rob <- colMeans(is.zero)
 
 #Outliers
