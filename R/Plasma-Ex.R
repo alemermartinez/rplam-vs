@@ -119,11 +119,13 @@ for(i in 1:3){
 ############################################
 
 source("R/rplam-vs-fn.R")
-grilla.chica <- c(0, 0.1) #c(0, 0.05, 0.1)
+grilla.chica <- c(0, 0.05, 0.1) #c(0, 0.1) #c(0, 0.05, 0.1)
 grid.lambda <- expand.grid(grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica)
 
 n <- length(y)
-M <- 50 #Debería ser 100 (o 20)
+
+#M totales 
+M <- 10 #Debería ser 100 (o 20)
 contador.max <- 1000
 mar <- rep(NA,M)
 mape <- rep(NA,M)
@@ -143,8 +145,10 @@ g3 <- matrix(NA,M,215)
 runs <- 0
 contador <- 0
 set.seed(123)
+
+runs.ini <- 0
 system.time({
-while( (runs<M) & (contador<contador.max)) {
+while( runs< (M+runs.ini) & (contador<contador.max) ) {
   contador <- contador+1
   subsample <- sample(1:n,100,replace=F)
   if( (range(X[-subsample,1])[1]<=range(X[subsample,1])[1]) &
@@ -157,18 +161,15 @@ while( (runs<M) & (contador<contador.max)) {
 
       print(contador)
       runs <- runs+1
-      print(runs)
 
-      y.new <- y[-subsample]
-      Z.new <- Z[-subsample,]
-      X.new <- X[-subsample,]
-      np.point.new <- X[subsample,]
-      fit.full <- plam.rob.vs.betas.lambdas(y= y.new, Z= Z.new, X= X.new,
+      if(runs>runs.ini){
+        print(runs)
+        y.new <- y[-subsample]
+        Z.new <- Z[-subsample,]
+        X.new <- X[-subsample,]
+        np.point.new <- X[subsample,]
+        fit.full <- plam.rob.vs.betas.lambdas(y= y.new, Z= Z.new, X= X.new,
                                              np.point = np.point.new, grid.lambda=grid.lambda)
-      #if (class(fit.full)[1] != "try-error") {
-
-
-
         is.zero[runs,] <- fit.full$is.zero
         nknots.muestras[runs] <- fit.full$nknots
         lambdas.muestras[runs,] <- as.numeric(fit.full$lambdas)
@@ -189,25 +190,39 @@ while( (runs<M) & (contador<contador.max)) {
         residuos <- y[-subsample]-fit.full$prediction
         mar[runs] <- median(abs(residuos))
         sizes[runs] <- sum(fit.full$is.zero==FALSE)
-      #}
+      }
   }
 }
-}) #Tarda 521 = 8.53 minutos segs en hacer 5 muestras con grilla de 2
+})
+
+#GUARDAR LA INFORMACIÓN EN UNA MATRIZ
+
+#Tarda 521 = 8.53 minutos segs en hacer 5 muestras con grilla de 2
+
+#Tarda 5305 segs = 1,47 horas en hacer 50 muestras con grilla de 2
+#> mar.rob
+#[1] 0.5350902
+#> mape.rob
+#[1] 0.3039343
+#> 1-col.is.zero.rob
+#[1] 0.96 0.30 0.32 1.00 0.88 0.20 0.14 0.68 0.06 0.92
+#> colMeans(lambdas.muestras)
+#[1] 0.092 0.076 0.070 0.010 0.070 0.088 0.088 0.034 0.094 0.016
 
 #Tarda 32235 = casi 9 horas segs en hacer 5 muestras con grilla de 3
-> mar.rob
-[1] 0.517092
-> mape.rob
-[1] 0.3093536
-> 1-col.is.zero.rob
-[1] 1.0 0.0 0.4 1.0 0.6 0.0 0.0 1.0 0.0 1.0
-> lambdas.muestras
-[,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
-[1,]  0.1 0.10 0.10 0.05  0.1 0.10 0.05    0 0.10   0.0
-[2,]  0.1 0.10 0.10 0.05  0.1 0.10 0.10    0 0.10   0.0
-[3,]  0.1 0.05 0.10 0.00  0.1 0.10 0.10    0 0.05   0.0
-[4,]  0.0 0.05 0.05 0.00  0.1 0.10 0.10    0 0.10   0.0
-[5,]  0.1 0.10 0.05 0.05  0.1 0.05 0.10    0 0.05   0.1
+#> mar.rob
+#[1] 0.517092
+#> mape.rob
+#[1] 0.3093536
+#> 1-col.is.zero.rob
+#[1] 1.0 0.0 0.4 1.0 0.6 0.0 0.0 1.0 0.0 1.0
+#> lambdas.muestras
+#[,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+#[1,]  0.1 0.10 0.10 0.05  0.1 0.10 0.05    0 0.10   0.0
+#[2,]  0.1 0.10 0.10 0.05  0.1 0.10 0.10    0 0.10   0.0
+#[3,]  0.1 0.05 0.10 0.00  0.1 0.10 0.10    0 0.05   0.0
+#[4,]  0.0 0.05 0.05 0.00  0.1 0.10 0.10    0 0.10   0.0
+#[5,]  0.1 0.10 0.05 0.05  0.1 0.05 0.10    0 0.05   0.1
 
 #Cuáles son cero:
 is.zero.rob <- colSums(is.zero)
@@ -230,6 +245,9 @@ col.is.zero.rob <- colMeans(is.zero)
 #Seleccionadas en el modelo
 1-col.is.zero.rob
 
+#Lambdas
+colMeans(lambdas.muestras)
+
 #Outliers
 mean(cant.out)
 median(cant.out)
@@ -239,6 +257,7 @@ nombre= "Cantidad-Outliers-100Muestras.pdf"
 pdf(nombre, bg="transparent")
 hist(cant.out, xlab="cantidad de outliers", main="")
 dev.off()
+
 
 
 ################################
