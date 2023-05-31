@@ -119,11 +119,11 @@ for(i in 1:3){
 ############################################
 
 source("R/rplam-vs-fn.R")
-grilla.chica <- c(0, 0.1)
+grilla.chica <- c(0, 0.1) #c(0, 0.05, 0.1)
 grid.lambda <- expand.grid(grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica)
 
 n <- length(y)
-M <- 10 #Debería ser 100 (o 20)
+M <- 50 #Debería ser 100 (o 20)
 contador.max <- 1000
 mar <- rep(NA,M)
 mape <- rep(NA,M)
@@ -134,7 +134,7 @@ cant.out <- rep(NA,M)
 
 set.seed(17)
 submuestras <- matrix(NA,M,100)
-is.zero <- matrix(NA,M,13)
+is.zero <- matrix(NA,M,10)
 g1 <- matrix(NA,M,215)
 g2 <- matrix(NA,M,215)
 g3 <- matrix(NA,M,215)
@@ -142,6 +142,7 @@ g3 <- matrix(NA,M,215)
 #Lo que sigue es lento!
 runs <- 0
 contador <- 0
+set.seed(123)
 system.time({
 while( (runs<M) & (contador<contador.max)) {
   contador <- contador+1
@@ -170,7 +171,7 @@ while( (runs<M) & (contador<contador.max)) {
 
         is.zero[runs,] <- fit.full$is.zero
         nknots.muestras[runs] <- fit.full$nknots
-        lambdas.muestras[runs,] <- fit.full$lambdas
+        lambdas.muestras[runs,] <- as.numeric(fit.full$lambdas)
         print(lambdas.muestras[runs,])
 
         submuestras[runs,] <- subsample
@@ -191,8 +192,22 @@ while( (runs<M) & (contador<contador.max)) {
       #}
   }
 }
-}) #Tarda 287.73 segs=4.79 mins
+}) #Tarda 521 = 8.53 minutos segs en hacer 5 muestras con grilla de 2
 
+#Tarda 32235 = casi 9 horas segs en hacer 5 muestras con grilla de 3
+> mar.rob
+[1] 0.517092
+> mape.rob
+[1] 0.3093536
+> 1-col.is.zero.rob
+[1] 1.0 0.0 0.4 1.0 0.6 0.0 0.0 1.0 0.0 1.0
+> lambdas.muestras
+[,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+[1,]  0.1 0.10 0.10 0.05  0.1 0.10 0.05    0 0.10   0.0
+[2,]  0.1 0.10 0.10 0.05  0.1 0.10 0.10    0 0.10   0.0
+[3,]  0.1 0.05 0.10 0.00  0.1 0.10 0.10    0 0.05   0.0
+[4,]  0.0 0.05 0.05 0.00  0.1 0.10 0.10    0 0.10   0.0
+[5,]  0.1 0.10 0.05 0.05  0.1 0.05 0.10    0 0.05   0.1
 
 #Cuáles son cero:
 is.zero.rob <- colSums(is.zero)
@@ -212,6 +227,9 @@ mape.rob <- mean(mape)
 #Selected frequency for the 10 variables as 0
 col.is.zero.rob <- colMeans(is.zero)
 
+#Seleccionadas en el modelo
+1-col.is.zero.rob
+
 #Outliers
 mean(cant.out)
 median(cant.out)
@@ -226,6 +244,8 @@ dev.off()
 ################################
 # Ver qué queda con el clásico #
 ################################
+
+  ### CORREGIR!!! ###
 
 grid.la1 <- c(0,0.001,0.01,0.05, 0.1, 0.2) #c(0,0.001,0.01,0.05, 0.1, 0.2,1,5,20) #c(0,0.1,1,10,100,1000) #c(0,0.001,0.01,0.05, 0.1, 0.2) #Con estandarizacion
 grid.la2 <- c(0.01,0.05, 0.1, 0.2, 0.5, 1, 2) #c(0,0.1,1,10,100,1000) #10 #c(0,0.001,0.01,0.05, 0.1, 0.2) #Con estandarizacion
