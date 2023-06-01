@@ -1941,14 +1941,12 @@ plam.cl.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=100
   # In case it is a cathegorical variable, class of Z should be 'factor'.
   
   n <- length(y)
-  
   Z.aux <- Z
   q <- dim(Z)[2]
   
   sal  <- lm(y ~ Z.aux)
   
   xdesign <- model.matrix(sal)
-  
   
   #Construyo el beta 0
   beta.ini.complete <- as.vector(sal$coefficients)
@@ -2104,7 +2102,7 @@ plam.cl.vs.betas.lambdas <- function(y, Z, X, np.point=NULL, degree.spline=degre
   #Calculo el estimador sin penalizar
   unpen <- plam.cl(y=y, Z=Z, X=X, np.point=np.point, degree.spline=degree.spline)
   nknots <- unpen$nknots
-  mu.hat <- unpen$alpha
+  mu.hat <- unpen$coef.const
   g.matrix <- unpen$g.matrix
   nbasis <- unpen$nbasis
   np.prediction <- unpen$np.prediction
