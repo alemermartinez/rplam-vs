@@ -92,6 +92,13 @@ median( abs(y-fit.rob$prediction))
 system.time({
   fit.cl <- plam.cl.vs.betas.lambdas(y, Z, X, degree.spline=degree.spline, grid.lambda=grid.lambda)
 })
+fit.cl$nknots
+fit.cl$coef.const
+mean(y)
+fit.cl$coef.lin
+fit.cl$lambdas
+fit.cl$is.zero
+median( abs(y-fit.cl$prediction))
 
 aa <- boxplot(y-fit.rob$prediction)
 length(aa$out)
@@ -123,7 +130,7 @@ for(i in 1:3){
 ############################################
 
 source("R/rplam-vs-fn.R")
-grilla.chica <- c(0, 0.05, 0.1) #c(0, 0.1) #c(0, 0.05, 0.1)
+grilla.chica <- c(0, 0.1) #c(0, 0.1) #c(0, 0.05, 0.1)
 grid.lambda <- expand.grid(grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica)
 
 n <- length(y)
