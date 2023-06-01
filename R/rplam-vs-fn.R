@@ -2092,7 +2092,7 @@ plam.rob.vs.betas.lambdas.fixed <- function(y, Z, lambdas, maxit=100, MAXITER=10
 
 #' Selection lambdas with BIC criteria for betas
 #' @export
-plam.cl.vs.betas.lambdas <- function(y, Z, X, np.point=NULL, degree.spline=degree.spline, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
+plam.cl.vs.betas.lambdas <- function(y, Z, X, np.point=NULL, degree.spline=3, grid.lambda, maxit=100, MAXITER=100, bound.control=10^(-3)){
   # y continuos response variable (n)
   # Z a discret or cathegorical vector (n) or matrix (n x q) for the linear part.
   # In case it is a cathegorical variable, class of Z should be 'factor'.
