@@ -73,12 +73,12 @@ library(fda)
 set.seed(123)
 
 #Grilla
-grilla.chica <- c(0,0.05,0.1) #c(0, 0.001, 0.01, 0.05, 0.1, 0.2)
+grilla.chica <- c(0,0.1) #c(0, 0.001, 0.01, 0.05, 0.1, 0.2)
 grid.lambda <- expand.grid(grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica,grilla.chica)
 dim(grid.lambda)
 
 system.time(
-  fit.rob <- plam.rob.vs.betas.lambdas(y, Z, X, degree.spline=degree.spline, grid.lambda)
+  fit.rob <- plam.rob.vs.betas.lambdas(y, Z, X, degree.spline=degree.spline, grid.lambda=grid.lambda)
 )#Con dos elementos en la grilla tarda 133.179
 
 fit.rob$nknots
@@ -88,6 +88,10 @@ fit.rob$coef.lin
 fit.rob$lambdas
 fit.rob$is.zero
 median( abs(y-fit.rob$prediction))
+
+system.time({
+  fit.cl <- plam.cl.vs.betas.lambdas(y, Z, X, degree.spline=degree.spline, grid.lambda=grid.lambda)
+})
 
 aa <- boxplot(y-fit.rob$prediction)
 length(aa$out)
