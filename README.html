@@ -352,46 +352,21 @@ display: none;
 </div>
 
 
-<div id="rplam-vs" class="section level1">
-<h1>rplam-vs</h1>
 <p>In this package, a robust estimation and variable selection procedure
 for partially linear additive models is performed using the real dataset
 from nutritional epidemiology.</p>
-<p>Let’s begin by reading the data.</p>
-<pre class="r"><code>datos &lt;- read.table(&quot;Plasma_Retinol.txt&quot;, sep=&quot;\t&quot;)
-str(datos)</code></pre>
+<p>Let’s begin by reading the data.
+<code>{r data, results=&#39;hide&#39;, cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE} datos &lt;- read.table(&quot;Plasma_Retinol.txt&quot;, sep=&quot;\t&quot;) str(datos)</code></p>
 <p>Since a robust approach will be applied, we standarizing the
 continuos covariates robustly.</p>
-<pre class="r"><code>age &lt;- (datos$V1 - median(datos$V1))/mad(datos$V1)
-sex &lt;- datos$V2-1
-smokstat &lt;- datos$V3
-smok1 &lt;- as.numeric(datos$V3==2)
-smok2 &lt;- as.numeric(datos$V3==3)
-quetelet &lt;- (datos$V4 - median(datos$V4))/mad(datos$V4)
-vituse &lt;- datos$V5
-vit1 &lt;- as.numeric(datos$V5==1)
-vit2 &lt;- as.numeric(datos$V5==2)
-calories &lt;- (datos$V6 - median(datos$V6))/mad(datos$V6)
-fat &lt;- (datos$V7-median(datos$V7))/mad(datos$V7)
-fiber &lt;- (datos$V8-median(datos$V8))/mad(datos$V8)
-alcohol &lt;- (datos$V9-median(datos$V9))/mad(datos$V9)
-cholesterol &lt;- (datos$V10-median(datos$V10))/mad(datos$V10)
-betadiet &lt;- (datos$V11-median(datos$V11))/mad(datos$V11)
-retdiet &lt;- (datos$V12-median(datos$V12))/mad(datos$V12)
-retplasma &lt;- (datos$V14-median(datos$V14))/mad(datos$V14)
-Z &lt;- cbind(sex,smok1,smok2,quetelet,vit1,vit2,calories,
-           fat,alcohol,betadiet)
-X &lt;- cbind(age,cholesterol,fiber)</code></pre>
-<p>And also the response variable.</p>
-<pre class="r"><code>betaplasma &lt;- (datos$V13-median(datos$V13))/mad(datos$V13)
-y &lt;- betaplasma</code></pre>
+<p><code>{r covariates, results=&#39;hide&#39;, cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE} age &lt;- (datos$V1 - median(datos$V1))/mad(datos$V1) sex &lt;- datos$V2-1 smokstat &lt;- datos$V3 smok1 &lt;- as.numeric(datos$V3==2) smok2 &lt;- as.numeric(datos$V3==3) quetelet &lt;- (datos$V4 - median(datos$V4))/mad(datos$V4) vituse &lt;- datos$V5 vit1 &lt;- as.numeric(datos$V5==1) vit2 &lt;- as.numeric(datos$V5==2) calories &lt;- (datos$V6 - median(datos$V6))/mad(datos$V6) fat &lt;- (datos$V7-median(datos$V7))/mad(datos$V7) fiber &lt;- (datos$V8-median(datos$V8))/mad(datos$V8) alcohol &lt;- (datos$V9-median(datos$V9))/mad(datos$V9) cholesterol &lt;- (datos$V10-median(datos$V10))/mad(datos$V10) betadiet &lt;- (datos$V11-median(datos$V11))/mad(datos$V11) retdiet &lt;- (datos$V12-median(datos$V12))/mad(datos$V12) retplasma &lt;- (datos$V14-median(datos$V14))/mad(datos$V14) Z &lt;- cbind(sex,smok1,smok2,quetelet,vit1,vit2,calories,            fat,alcohol,betadiet) X &lt;- cbind(age,cholesterol,fiber)</code></p>
+<p>And also the response variable.
+<code>{r response, results=&#39;hide&#39;, cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE} betaplasma &lt;- (datos$V13-median(datos$V13))/mad(datos$V13) y &lt;- betaplasma</code></p>
 <p>In order to see the one-by-one relationship, we can do a scatter
-plot.</p>
-<pre class="r"><code>pairs(datos)</code></pre>
-<p>It can be appreciated an extreme outlier in ‘alcohol’.</p>
-<pre class="r"><code>boxplot(alcohol)</code></pre>
-<p><img role="img" src="README_files/figure-markdown_github/ggplot1-1.png" /></p>
-</div>
+plot.
+<code>{r scatter, echo=TRUE, warning=FALSE} pairs(datos)</code></p>
+<p>It can be appreciated an extreme outlier in ‘alcohol’.
+<code>{r alcohol, echo=TRUE, warning=FALSE} boxplot(alcohol)</code></p>
 
 
 

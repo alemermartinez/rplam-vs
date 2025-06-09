@@ -3,11 +3,6 @@ for partially linear additive models is performed using the real dataset
 from nutritional epidemiology.
 
 Let's begin by reading the data.
-``` r
-datos <- read.table("Plasma_Retinol.txt", sep="\t")
-str(datos)
-```
-
 ```{r data, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 datos <- read.table("Plasma_Retinol.txt", sep="\t")
 str(datos)
@@ -46,12 +41,12 @@ y <- betaplasma
 ```
 
 In order to see the one-by-one relationship, we can do a scatter plot.
-```{r scatter, echo=FALSE,warning=FALSE}
+```{r scatter, echo=TRUE, warning=FALSE}
 pairs(datos)
 ```
 
 It can be appreciated an extreme outlier in 'alcohol'.
-```{r alcohol, echo=FALSE,warning=FALSE}
+```{r alcohol, echo=TRUE, warning=FALSE}
 boxplot(alcohol)
 ```
 
