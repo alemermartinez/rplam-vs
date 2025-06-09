@@ -1,15 +1,13 @@
-In this package, a robust estimation and variable selection procedure
-for partially linear additive models is performed using the real dataset
-from nutritional epidemiology.
+In this package, a robust estimation and variable selection procedure for partially linear additive models is performed using the real dataset from nutritional epidemiology.
 
 Let's begin by reading the data.
+
 ```{r data, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 datos <- read.table("Plasma_Retinol.txt", sep="\t")
 str(datos)
 ```
 
-Since a robust approach will be applied, we standarizing the continuos covariates
-robustly.
+Since a robust approach will be applied, we standarizing the continuos covariates robustly.
 
 ```{r covariates, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 age <- (datos$V1 - median(datos$V1))/mad(datos$V1)
@@ -35,18 +33,21 @@ X <- cbind(age,cholesterol,fiber)
 ```
 
 And also the response variable.
+
 ```{r response, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 betaplasma <- (datos$V13-median(datos$V13))/mad(datos$V13)
 y <- betaplasma
 ```
 
 In order to see the one-by-one relationship, we can do a scatter plot.
+
 ```{r scatter, echo=TRUE, warning=FALSE}
 pairs(datos)
 ```
 
 It can be appreciated an extreme outlier in 'alcohol'.
-```{r alcohol, echo=TRUE, warning=FALSE}
+
+``` r
 boxplot(alcohol)
 ```
 
