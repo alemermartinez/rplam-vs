@@ -7,19 +7,22 @@ output:
     variant: markdown_github
 ---
 
-In this package, a robust estimation and variable selection procedure
-for partially linear additive models is performed using the real dataset
-from nutritional epidemiology.
+In this package, a robust estimation and variable selection procedure for partially linear additive models is performed using the real dataset from nutritional epidemiology.
 
+Let's first load the script.
+
+```{r source, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+source("R/rplam-vs-fn.R")
+```
 
 Let's begin by reading the data.
+
 ```{r data, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 datos <- read.table("Plasma_Retinol.txt", sep="\t")
 str(datos)
 ```
 
-Since a robust approach will be applied, we standarizing the continuos covariates
-robustly.
+Since a robust approach will be applied, we standarizing the continuos covariates robustly.
 
 ```{r covariates, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 age <- (datos$V1 - median(datos$V1))/mad(datos$V1)
@@ -50,13 +53,54 @@ betaplasma <- (datos$V13-median(datos$V13))/mad(datos$V13)
 y <- betaplasma
 ```
 
-In order to see the one-by-one relationship, we can do a scatter plot.
-```{r scatter, echo=FALSE,warning=FALSE}
-pairs(datos)
-```
-
 It can be appreciated an extreme outlier in 'alcohol'.
 ```{r alcohol, echo=FALSE,warning=FALSE}
 boxplot(alcohol)
 ```
 
+We will apply a robust estimator that simultaneoulsy select variables from the linear and the additive parts of the model.
+
+We consider two grids for the auxiliary parameters.
+
+```{r grids, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+grid.la1 <- seq(0, 0.1, by=0.01)
+grid.la2 <- seq(0, 2, by=0.1)
+```
+and compute the proposal using cubic splines. Take into account that the computation of the estimator over these grid takes about 723 secs in an Intel Core i7-10700 CPU \@ 2.90GHz × 16.
+
+```{r fit, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+degree.spline <- 3
+system.time(
+fit.rob <- plam.rob.vs(y, Z, X, degree.spline=degree.spline, grid.la1=grid.la1, grid.la2=grid.la2)
+)
+```
+
+The results obtained are the following:
+```{r fit-results, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}   
+fit.rob$nknots
+fit.rob$coef.const
+fit.rob$coef.lin
+fit.rob$la1
+fit.rob$la2
+```
+
+Are there covariables irrelevant for the model?
+```{r variable-selection, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+fit.rob$is.zero
+```
+
+It can be appreciated that only five covariates are considered important for the model for the robust approach.
+
+Let's see if the proposal identifies any large residuals:
+```{r residuals, echo=FALSE,warning=FALSE}
+res <- y-fit.rob$prediction
+aa <- boxplot(y-fit.rob$prediction, col="lightblue")
+length(aa$out)
+```
+
+
+17 observations were identified by the boxplot. These observations corresponds to observations
+```{r outliers, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+in.ro <- (1:length(res))[ res %in% aa$out ]
+in.ro
+```
