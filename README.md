@@ -90,8 +90,11 @@ res <- y-fit.rob$prediction
 aa <- boxplot(y-fit.rob$prediction, col="lightblue")
 length(aa$out)
 ```
+![](README_files/figure-markdown_github/residuals-1.png)
+
 17 observations were identified by the boxplot. These observations corresponds to observations
 ``` r
 in.ro <- (1:length(res))[ res %in% aa$out ]
 in.ro
 ```
+
