@@ -355,18 +355,41 @@ display: none;
 <p>In this package, a robust estimation and variable selection procedure
 for partially linear additive models is performed using the real dataset
 from nutritional epidemiology.</p>
-<p>Let’s begin by reading the data.
-<code>{r data, results=&#39;hide&#39;, cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE} datos &lt;- read.table(&quot;Plasma_Retinol.txt&quot;, sep=&quot;\t&quot;) str(datos)</code></p>
+<p>Let’s first install package <code>rplam-vs</code></p>
+<pre class="r"><code>library(devtools)
+install_github(&quot;alemermartinez/rplam-vs&quot;)
+library(rplam-vs)</code></pre>
+<p>Let’s begin by reading the data.</p>
+<pre class="r"><code>datos &lt;- read.table(&quot;Plasma_Retinol.txt&quot;, sep=&quot;\t&quot;)
+str(datos)</code></pre>
 <p>Since a robust approach will be applied, we standarizing the
 continuos covariates robustly.</p>
-<p><code>{r covariates, results=&#39;hide&#39;, cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE} age &lt;- (datos$V1 - median(datos$V1))/mad(datos$V1) sex &lt;- datos$V2-1 smokstat &lt;- datos$V3 smok1 &lt;- as.numeric(datos$V3==2) smok2 &lt;- as.numeric(datos$V3==3) quetelet &lt;- (datos$V4 - median(datos$V4))/mad(datos$V4) vituse &lt;- datos$V5 vit1 &lt;- as.numeric(datos$V5==1) vit2 &lt;- as.numeric(datos$V5==2) calories &lt;- (datos$V6 - median(datos$V6))/mad(datos$V6) fat &lt;- (datos$V7-median(datos$V7))/mad(datos$V7) fiber &lt;- (datos$V8-median(datos$V8))/mad(datos$V8) alcohol &lt;- (datos$V9-median(datos$V9))/mad(datos$V9) cholesterol &lt;- (datos$V10-median(datos$V10))/mad(datos$V10) betadiet &lt;- (datos$V11-median(datos$V11))/mad(datos$V11) retdiet &lt;- (datos$V12-median(datos$V12))/mad(datos$V12) retplasma &lt;- (datos$V14-median(datos$V14))/mad(datos$V14) Z &lt;- cbind(sex,smok1,smok2,quetelet,vit1,vit2,calories,            fat,alcohol,betadiet) X &lt;- cbind(age,cholesterol,fiber)</code></p>
-<p>And also the response variable.
-<code>{r response, results=&#39;hide&#39;, cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE} betaplasma &lt;- (datos$V13-median(datos$V13))/mad(datos$V13) y &lt;- betaplasma</code></p>
-<p>In order to see the one-by-one relationship, we can do a scatter
-plot.
-<code>{r scatter, echo=TRUE, warning=FALSE} pairs(datos)</code></p>
-<p>It can be appreciated an extreme outlier in ‘alcohol’.
-<code>{r alcohol, echo=TRUE, warning=FALSE} boxplot(alcohol)</code></p>
+<pre class="r"><code>age &lt;- (datos$V1 - median(datos$V1))/mad(datos$V1)
+sex &lt;- datos$V2-1
+smokstat &lt;- datos$V3
+smok1 &lt;- as.numeric(datos$V3==2)
+smok2 &lt;- as.numeric(datos$V3==3)
+quetelet &lt;- (datos$V4 - median(datos$V4))/mad(datos$V4)
+vituse &lt;- datos$V5
+vit1 &lt;- as.numeric(datos$V5==1)
+vit2 &lt;- as.numeric(datos$V5==2)
+calories &lt;- (datos$V6 - median(datos$V6))/mad(datos$V6)
+fat &lt;- (datos$V7-median(datos$V7))/mad(datos$V7)
+fiber &lt;- (datos$V8-median(datos$V8))/mad(datos$V8)
+alcohol &lt;- (datos$V9-median(datos$V9))/mad(datos$V9)
+cholesterol &lt;- (datos$V10-median(datos$V10))/mad(datos$V10)
+betadiet &lt;- (datos$V11-median(datos$V11))/mad(datos$V11)
+retdiet &lt;- (datos$V12-median(datos$V12))/mad(datos$V12)
+retplasma &lt;- (datos$V14-median(datos$V14))/mad(datos$V14)
+Z &lt;- cbind(sex,smok1,smok2,quetelet,vit1,vit2,calories,
+           fat,alcohol,betadiet)
+X &lt;- cbind(age,cholesterol,fiber)</code></pre>
+<p>And also the response variable.</p>
+<pre class="r"><code>betaplasma &lt;- (datos$V13-median(datos$V13))/mad(datos$V13)
+y &lt;- betaplasma</code></pre>
+<p>It can be appreciated an extreme outlier in ‘alcohol’.</p>
+<pre class="r"><code>boxplot(alcohol)</code></pre>
+<p><img role="img" src="data:image/png;base64,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" /></p>
 
 
 

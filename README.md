@@ -1,15 +1,23 @@
 In this package, a robust estimation and variable selection procedure for partially linear additive models is performed using the real dataset from nutritional epidemiology.
 
+Let's first install package <code>rplam-vs</code>
+
+``` r
+library(devtools)
+install_github("alemermartinez/rplam-vs")
+library(rplam-vs)
+```
+
 Let's begin by reading the data.
 
-```{r data, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+``` r
 datos <- read.table("Plasma_Retinol.txt", sep="\t")
 str(datos)
 ```
 
 Since a robust approach will be applied, we standarizing the continuos covariates robustly.
 
-```{r covariates, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+``` r
 age <- (datos$V1 - median(datos$V1))/mad(datos$V1)
 sex <- datos$V2-1
 smokstat <- datos$V3
@@ -34,21 +42,14 @@ X <- cbind(age,cholesterol,fiber)
 
 And also the response variable.
 
-```{r response, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+``` r
 betaplasma <- (datos$V13-median(datos$V13))/mad(datos$V13)
 y <- betaplasma
 ```
 
-In order to see the one-by-one relationship, we can do a scatter plot.
-
-```{r scatter, echo=TRUE, warning=FALSE}
-pairs(datos)
-```
-![](README_files/figure-markdown_github/scatter-1.png)
-
 It can be appreciated an extreme outlier in 'alcohol'.
-
 ``` r
 boxplot(alcohol)
 ```
 ![](README_files/figure-markdown_github/alcohol-1.png)
+
