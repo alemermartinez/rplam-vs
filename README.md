@@ -1,11 +1,9 @@
 In this package, a robust estimation and variable selection procedure for partially linear additive models is performed using the real dataset from nutritional epidemiology.
 
-Let's first install package <code>rplam-vs</code>
+Let's first load the script.
 
 ``` r
-library(devtools)
-install_github("alemermartinez/rplam-vs")
-library(rplam-vs)
+source("R/rplam-vs-fn.R")
 ```
 
 Let's begin by reading the data.
@@ -53,3 +51,47 @@ boxplot(alcohol)
 ```
 ![](README_files/figure-markdown_github/alcohol-1.png)
 
+We will apply a robust estimator that simultaneoulsy select variables from the linear 
+and the additive parts of the model.
+
+We consider two grids for the auxiliary parameters.
+``` r
+grid.la1 <- seq(0, 0.1, by=0.01)
+grid.la2 <- seq(0, 2, by=0.1)
+```
+and compute the proposal using cubic splines. Take into account that the computation
+of the estimator over these grid takes about 723 secs in an Intel Core i7-10700 CPU @ 2.90GHz × 16.
+``` r
+degree.spline <- 3
+system.time(
+fit.rob <- plam.rob.vs(y, Z, X, degree.spline=degree.spline, grid.la1=grid.la1, grid.la2=grid.la2)
+)
+```
+
+The results obtained are the following:
+```
+fit.rob$nknots
+fit.rob$coef.const
+fit.rob$coef.lin
+fit.rob$la1
+fit.rob$la2
+```
+
+Are there covariables irrelevant for the model?
+``` r
+fit.rob$is.zero
+```
+It can be appreciated that only five covariates are considered important for the model for the 
+robust approach.
+
+Let's see if the proposal identifies any large residuals:
+``` r
+res <- y-fit.rob$prediction
+aa <- boxplot(y-fit.rob$prediction, col="lightblue")
+length(aa$out)
+```
+17 observations were identified by the boxplot. These observations corresponds to observations
+``` r
+in.ro <- (1:length(res))[ res %in% aa$out ]
+in.ro
+```

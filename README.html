@@ -355,10 +355,8 @@ display: none;
 <p>In this package, a robust estimation and variable selection procedure
 for partially linear additive models is performed using the real dataset
 from nutritional epidemiology.</p>
-<p>Let’s first install package <code>rplam-vs</code></p>
-<pre class="r"><code>library(devtools)
-install_github(&quot;alemermartinez/rplam-vs&quot;)
-library(rplam-vs)</code></pre>
+<p>Let’s first load the script.</p>
+<pre class="r"><code>source(&quot;R/rplam-vs-fn.R&quot;)</code></pre>
 <p>Let’s begin by reading the data.</p>
 <pre class="r"><code>datos &lt;- read.table(&quot;Plasma_Retinol.txt&quot;, sep=&quot;\t&quot;)
 str(datos)</code></pre>
@@ -390,6 +388,36 @@ y &lt;- betaplasma</code></pre>
 <p>It can be appreciated an extreme outlier in ‘alcohol’.</p>
 <pre class="r"><code>boxplot(alcohol)</code></pre>
 <p><img role="img" src="data:image/png;base64,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" /></p>
+<p>We will apply a robust estimator that simultaneoulsy select variables
+from the linear and the additive parts of the model.</p>
+<p>We consider two grids for the auxiliary parameters.</p>
+<pre class="r"><code>grid.la1 &lt;- seq(0, 0.1, by=0.01)
+grid.la2 &lt;- seq(0, 2, by=0.1)</code></pre>
+<p>and compute the proposal using cubic splines. Take into account that
+the computation of the estimator over these grid takes about 723 secs in
+an Intel Core i7-10700 CPU @ 2.90GHz × 16.</p>
+<pre class="r"><code>degree.spline &lt;- 3
+system.time(
+fit.rob &lt;- plam.rob.vs(y, Z, X, degree.spline=degree.spline, grid.la1=grid.la1, grid.la2=grid.la2)
+)</code></pre>
+<p>The results obtained are the following:</p>
+<pre><code>fit.rob$nknots
+fit.rob$coef.const
+fit.rob$coef.lin
+fit.rob$la1
+fit.rob$la2</code></pre>
+<p>Are there covariables irrelevant for the model?</p>
+<pre class="r"><code>fit.rob$is.zero</code></pre>
+<p>It can be appreciated that only five covariates are considered
+important for the model for the robust approach.</p>
+<p>Let’s see if the proposal identifies any large residuals:</p>
+<pre class="r"><code>res &lt;- y-fit.rob$prediction
+aa &lt;- boxplot(y-fit.rob$prediction, col=&quot;lightblue&quot;)
+length(aa$out)</code></pre>
+<p>17 observations were identified by the boxplot. These observations
+corresponds to observations</p>
+<pre class="r"><code>in.ro &lt;- (1:length(res))[ res %in% aa$out ]
+in.ro</code></pre>
 
 
 
