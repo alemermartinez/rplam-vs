@@ -44,10 +44,11 @@ In order to see the one-by-one relationship, we can do a scatter plot.
 ```{r scatter, echo=TRUE, warning=FALSE}
 pairs(datos)
 ```
+![](README_files/figure-markdown_github/scatter-1.png)
 
 It can be appreciated an extreme outlier in 'alcohol'.
 
 ``` r
 boxplot(alcohol)
 ```
-
+![](README_files/figure-markdown_github/alcohol-1.png)
