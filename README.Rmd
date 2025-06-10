@@ -68,7 +68,7 @@ grid.la2 <- seq(0, 2, by=0.1)
 ```
 and compute the proposal using cubic splines. Take into account that the computation of the estimator over these grid takes about 723 secs in an Intel Core i7-10700 CPU \@ 2.90GHz × 16.
 
-```{r fit, warning=FALSE, comment=FALSE, message=FALSE}
+```{r fit, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 degree.spline <- 3
 system.time(
 fit.rob <- plam.rob.vs(y, Z, X, degree.spline=degree.spline, grid.la1=grid.la1, grid.la2=grid.la2)
@@ -95,7 +95,6 @@ Let's see if the proposal identifies any large residuals:
 ```{r residuals, echo=FALSE,warning=FALSE}
 res <- y-fit.rob$prediction
 aa <- boxplot(y-fit.rob$prediction, col="lightblue")
-length(aa$out)
 ```
 
 
