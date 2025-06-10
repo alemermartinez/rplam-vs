@@ -11,20 +11,20 @@ In this package, a robust estimation and variable selection procedure for partia
 
 Let's first load the script.
 
-```{r source, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r source}
 source("R/rplam-vs-fn.R")
 ```
 
 Let's begin by reading the data.
 
-```{r data, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r data}
 datos <- read.table("Plasma_Retinol.txt", sep="\t")
 str(datos)
 ```
 
 Since a robust approach will be applied, we standarizing the continuos covariates robustly.
 
-```{r covariates, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r covariates}
 age <- (datos$V1 - median(datos$V1))/mad(datos$V1)
 sex <- datos$V2-1
 smokstat <- datos$V3
@@ -48,7 +48,7 @@ X <- cbind(age,cholesterol,fiber)
 ```
 
 And also the response variable.
-```{r response, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r response}
 betaplasma <- (datos$V13-median(datos$V13))/mad(datos$V13)
 y <- betaplasma
 ```
@@ -62,13 +62,13 @@ We will apply a robust estimator that simultaneoulsy select variables from the l
 
 We consider two grids for the auxiliary parameters.
 
-```{r grids, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r grids}
 grid.la1 <- seq(0, 0.1, by=0.01)
 grid.la2 <- seq(0, 2, by=0.1)
 ```
 and compute the proposal using cubic splines. Take into account that the computation of the estimator over these grid takes about 723 secs in an Intel Core i7-10700 CPU \@ 2.90GHz × 16.
 
-```{r fit, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r fit, warning=FALSE, comment=FALSE, message=FALSE}
 degree.spline <- 3
 system.time(
 fit.rob <- plam.rob.vs(y, Z, X, degree.spline=degree.spline, grid.la1=grid.la1, grid.la2=grid.la2)
@@ -76,7 +76,7 @@ fit.rob <- plam.rob.vs(y, Z, X, degree.spline=degree.spline, grid.la1=grid.la1, 
 ```
 
 The results obtained are the following:
-```{r fit-results, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}   
+```{r fit-results}   
 fit.rob$nknots
 fit.rob$coef.const
 fit.rob$coef.lin
@@ -85,7 +85,7 @@ fit.rob$la2
 ```
 
 Are there covariables irrelevant for the model?
-```{r variable-selection, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r variable-selection}
 fit.rob$is.zero
 ```
 
@@ -100,7 +100,7 @@ length(aa$out)
 
 
 17 observations were identified by the boxplot. These observations corresponds to observations
-```{r outliers, results='hide', cache=FALSE, results=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+```{r outliers}
 in.ro <- (1:length(res))[ res %in% aa$out ]
 in.ro
 ```
